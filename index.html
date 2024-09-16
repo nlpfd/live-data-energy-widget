@@ -32,17 +32,20 @@
 
     <script>
         function fetchLiveData() {
-            // API URL
             const apiUrl = 'https://api.carbonintensity.org.uk/regional';
 
             fetch(apiUrl)
             .then(response => response.json())
             .then(data => {
-                // Log the full API response to debug on GitHub Pages
-                console.log('API Response on GitHub Pages:', JSON.stringify(data, null, 2));
+                // Log the full API response to debug
+                console.log('Full API Response:', JSON.stringify(data, null, 2));
+
+                // Inspect the regions to see if "North West England" is present
+                const regions = data.data[0].regions;
+                console.log('Available Regions:', regions);
 
                 // Find the North West region
-                const region = data.data[0].regions.find(r => r.shortname === "North West England");
+                const region = regions.find(r => r.shortname === "North West England");
                 if (!region || !region.generationmix) {
                     console.error('Generation mix data not available for North West England');
                     document.getElementById('live-percentage').textContent = 'Data unavailable';
@@ -63,7 +66,6 @@
             });
         }
 
-        // Fetch data when the page loads
         window.onload = fetchLiveData;
     </script>
 </body>
