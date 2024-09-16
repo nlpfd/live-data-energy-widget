@@ -32,11 +32,7 @@
 
     <script>
         function fetchLiveData() {
-            // Optional: Use a CORS proxy if encountering issues
-            // Uncomment the below line to use a proxy if CORS is an issue
-            // const apiUrl = 'https://cors-anywhere.herokuapp.com/https://api.carbonintensity.org.uk/regional';
-
-            // Standard API URL
+            // API URL
             const apiUrl = 'https://api.carbonintensity.org.uk/regional';
 
             fetch(apiUrl)
@@ -45,7 +41,7 @@
                 // Log the full API response to debug on GitHub Pages
                 console.log('API Response on GitHub Pages:', JSON.stringify(data, null, 2));
 
-                // Filter for North West England using the 'shortname' field
+                // Find the North West region
                 const region = data.data[0].regions.find(r => r.shortname === "North West England");
                 if (!region || !region.generationmix) {
                     console.error('Generation mix data not available for North West England');
@@ -53,7 +49,7 @@
                     return;
                 }
 
-                // Extract wind and solar percentages from the generation mix
+                // Calculate wind + solar percentages
                 const wind = region.generationmix.find(item => item.fuel === 'wind')?.perc || 0;
                 const solar = region.generationmix.find(item => item.fuel === 'solar')?.perc || 0;
                 const combinedRenewables = Math.round(wind + solar);
