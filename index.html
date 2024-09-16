@@ -3,7 +3,6 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <title>Live Data Widget</title>
     <style>
         #live-data-footer {
@@ -33,27 +32,21 @@
 
     <script>
         function fetchLiveData() {
-            const apiUrl = 'https://api.carbonintensity.org.uk/regional';
-
-            fetch(apiUrl)
+            // Use the broader regional API to get data for all regions
+            fetch('https://api.carbonintensity.org.uk/regional')
             .then(response => response.json())
             .then(data => {
-                // Log the full API response to debug
-                console.log('Full API Response:', JSON.stringify(data, null, 2));
+                console.log('Full API Response:', data); // Log the full response
 
-                // Inspect the regions to see if "North West England" is present
-                const regions = data.data[0].regions;
-                console.log('Available Regions:', regions);
-
-                // Find the North West region
-                const region = regions.find(r => r.shortname === "North West England");
+                // Filter for North West England using the 'shortname' field
+                const region = data.data[0].regions.find(r => r.shortname === "North West England");
                 if (!region || !region.generationmix) {
                     console.error('Generation mix data not available for North West England');
                     document.getElementById('live-percentage').textContent = 'Data unavailable';
                     return;
                 }
 
-                // Calculate wind + solar percentages
+                // Extract wind and solar percentages from the generation mix
                 const wind = region.generationmix.find(item => item.fuel === 'wind')?.perc || 0;
                 const solar = region.generationmix.find(item => item.fuel === 'solar')?.perc || 0;
                 const combinedRenewables = Math.round(wind + solar);
@@ -67,6 +60,7 @@
             });
         }
 
+        // Fetch data when the page loads
         window.onload = fetchLiveData;
     </script>
 </body>
