@@ -30,38 +30,40 @@
         <span id="live-percentage">Loading...</span>
     </div>
 
+    <!-- Move the script to the bottom to ensure all elements are loaded -->
     <script>
-        function fetchLiveData() {
-            // Use the broader regional API to get data for all regions
-            fetch('https://api.carbonintensity.org.uk/regional')
-            .then(response => response.json())
-            .then(data => {
-                console.log('Full API Response:', data); // Log the full response
+        document.addEventListener("DOMContentLoaded", function() {
+            function fetchLiveData() {
+                fetch('https://api.carbonintensity.org.uk/regional')
+                .then(response => response.json())
+                .then(data => {
+                    console.log('Full API Response:', data); // Log the full response
 
-                // Filter for North West England using the 'shortname' field
-                const region = data.data[0].regions.find(r => r.shortname === "North West England");
-                if (!region || !region.generationmix) {
-                    console.error('Generation mix data not available for North West England');
-                    document.getElementById('live-percentage').textContent = 'Data unavailable';
-                    return;
-                }
+                    // Filter for North West England using the 'shortname' field
+                    const region = data.data[0].regions.find(r => r.shortname === "North West England");
+                    if (!region || !region.generationmix) {
+                        console.error('Generation mix data not available for North West England');
+                        document.getElementById('live-percentage').textContent = 'Data unavailable';
+                        return;
+                    }
 
-                // Extract wind and solar percentages from the generation mix
-                const wind = region.generationmix.find(item => item.fuel === 'wind')?.perc || 0;
-                const solar = region.generationmix.find(item => item.fuel === 'solar')?.perc || 0;
-                const combinedRenewables = Math.round(wind + solar);
+                    // Extract wind and solar percentages from the generation mix
+                    const wind = region.generationmix.find(item => item.fuel === 'wind')?.perc || 0;
+                    const solar = region.generationmix.find(item => item.fuel === 'solar')?.perc || 0;
+                    const combinedRenewables = Math.round(wind + solar);
 
-                // Update the text with the combined renewable percentage
-                document.getElementById('live-percentage').textContent = combinedRenewables + "%";
-            })
-            .catch(error => {
-                console.error('Error fetching data:', error);
-                document.getElementById('live-percentage').textContent = 'Error fetching data';
-            });
-        }
+                    // Update the text with the combined renewable percentage
+                    document.getElementById('live-percentage').textContent = combinedRenewables + "%";
+                })
+                .catch(error => {
+                    console.error('Error fetching data:', error);
+                    document.getElementById('live-percentage').textContent = 'Error fetching data';
+                });
+            }
 
-        // Fetch data when the page loads
-        window.onload = fetchLiveData;
+            // Fetch data when the page has fully loaded
+            fetchLiveData();
+        });
     </script>
 </body>
 </html>
