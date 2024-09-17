@@ -10,57 +10,82 @@
             align-items: center;
             justify-content: center;
             padding: 10px;
-            background-color: #333;
+            background-color: #000; /* Black background */
             color: white;
+            font-family: Arial, sans-serif;
         }
-        #renewables-icon {
+
+        #energy-text {
+            margin-right: 5px; /* Tighter spacing */
+        }
+
+        .renewables-icon {
             width: 24px;
-            margin-right: 10px;
+            margin-left: 5px;  /* Equal margins for both sides */
+            margin-right: 5px;
         }
+
         #live-percentage {
             font-weight: bold;
             font-size: 18px;
+        }
+
+        /* Mobile-specific styles */
+        @media (max-width: 600px) {
+            #live-data-footer {
+                flex-direction: column;
+            }
+
+            .renewables-icon {
+                width: 20px; /* Smaller icons on mobile */
+                margin: 0 10px; /* Space for two characters on either side */
+            }
+
+            #percentage-wrapper {
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                margin-top: 5px;
+            }
         }
     </style>
 </head>
 <body>
     <div id="live-data-footer">
-        <img src="https://raw.githubusercontent.com/nlpfd/live-data-energy-widget/main/WIND-ICON.png" alt="Renewables Icon" id="renewables-icon">
-        <span id="energy-text">Renewables Currently on North West Grid: </span>
-        <span id="live-percentage">Loading...</span>
+        <span id="energy-text">Renewables Currently on North West Grid:</span>
+        <div id="percentage-wrapper">
+            <img src="https://raw.githubusercontent.com/nlpfd/live-data-energy-widget/main/WIND-ICON.png" alt="Renewables Icon" class="renewables-icon">
+            <span id="live-percentage">Loading...</span>
+            <img src="https://raw.githubusercontent.com/nlpfd/live-data-energy-widget/main/WIND-ICON.png" alt="Renewables Icon" class="renewables-icon">
+        </div>
     </div>
 
     <script>
         function fetchLiveData() {
-            // Use the broader regional API to get data for all regions
             fetch('https://api.carbonintensity.org.uk/regional')
             .then(response => response.json())
             .then(data => {
-                console.log('Full API Response:', data); // Log the full response
+                console.log('Full API Response:', data);
 
-                // Filter for North West England using the 'shortname' field
                 const region = data.data[0].regions.find(r => r.shortname === "North West England");
                 if (!region || !region.generationmix) {
                     console.error('Generation mix data not available for North West England');
-                    document.getElementById('live-percentage').textContent = 'Data unavailable';
+                    document.getElementById('live-percentage').textContent = ' Data unavailable';
                     return;
                 }
 
-                // Extract wind and solar percentages from the generation mix
                 const wind = region.generationmix.find(item => item.fuel === 'wind')?.perc || 0;
                 const solar = region.generationmix.find(item => item.fuel === 'solar')?.perc || 0;
                 const combinedRenewables = Math.round(wind + solar);
 
-                // Update the text with the combined renewable percentage
-                document.getElementById('live-percentage').textContent = combinedRenewables + "%";
+                document.getElementById('live-percentage').textContent = ' ' + combinedRenewables + "%";
             })
             .catch(error => {
                 console.error('Error fetching data:', error);
-                document.getElementById('live-percentage').textContent = 'Error fetching data';
+                document.getElementById('live-percentage').textContent = ' Error fetching data';
             });
         }
 
-        // Fetch data when the page loads
         window.onload = fetchLiveData;
     </script>
 </body>
