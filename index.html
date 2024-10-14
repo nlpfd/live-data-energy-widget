@@ -148,6 +148,11 @@
             .then(response => response.json())
             .then(data => {
                 const region = data.data[0].regions.find(r => r.shortname === apiRegionName);
+                
+                // Log the region data and shortname
+                console.log('Selected Region:', selectedRegion);
+                console.log('API Region Shortname:', region?.shortname);
+
                 if (!region || !region.generationmix) {
                     document.getElementById('live-percentage').textContent = ' Data unavailable';
                     return;
@@ -160,11 +165,15 @@
 
                 const startTime = formatHalfHourPeriod(new Date());
 
-                document.getElementById('region-display').textContent = selectedRegion + ": " + startTime;
+                // Ensure the region name exists before displaying it
+                if (region.shortname) {
+                    document.getElementById('region-display').textContent = selectedRegion + ": " + startTime;
+                } else {
+                    console.error('Region name not found.');
+                }
+                
                 document.getElementById('live-percentage').textContent = ' ' + combinedRenewables + "%";
-
-                // Once data is ready, show the widget
-                document.getElementById('live-data-footer').style.visibility = "visible";
+                document.getElementById('live-data-footer').style.visibility = "visible";  // Show the widget
             })
             .catch(error => {
                 console.error('Error fetching data:', error);
@@ -195,12 +204,22 @@
 
                 if (highestRegion) {
                     const selectedRegion = Object.keys(regionMapping).find(key => regionMapping[key] === highestRegion.shortname);
-                    document.getElementById('region-select').value = selectedRegion;
-                    document.getElementById('region-display').textContent = selectedRegion + ": " + formatHalfHourPeriod(new Date());
-                    document.getElementById('live-percentage').textContent = ' ' + Math.round(highestRenewables) + "%";
                     
-                    // Once data is ready, show the widget
-                    document.getElementById('live-data-footer').style.visibility = "visible";
+                    // Log to check if the selected region is being properly determined
+                    console.log('Selected region:', selectedRegion, 'Highest renewables:', highestRenewables);
+
+                    // If the selectedRegion is found, update the display
+                    if (selectedRegion) {
+                        document.getElementById('region-select').value = selectedRegion;
+                        document.getElementById('region-display').textContent = selectedRegion + ": " + formatHalfHourPeriod(new Date());
+                        document.getElementById('live-percentage').textContent = ' ' + Math.round(highestRenewables) + "%";
+                        
+                        // Once data is ready, show the widget
+                        document.getElementById('live-data-footer').style.visibility = "visible";
+                    } else {
+                        console.error('Selected region not found in regionMapping.');
+                        document.getElementById('live-percentage').textContent = ' Data unavailable';
+                    }
                 } else {
                     document.getElementById('live-percentage').textContent = ' Data unavailable';
                 }
