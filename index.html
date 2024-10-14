@@ -1,44 +1,78 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta charset="viewport" content="width=device-width, initial-scale=1.0">
     <title>Live Data Widget</title>
+    <!-- Include Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
     <style>
         #live-data-footer {
             display: flex;
             align-items: center;
             justify-content: center;
             padding: 10px;
-            background-color: #000; /* Black background */
+            background-color: #000;
             color: white;
             font-family: Arial, sans-serif;
-        }
-
-        #energy-text {
-            margin-right: 5px; /* Tighter spacing */
+            min-height: 40px;
+            visibility: hidden; /* Initially hidden */
         }
 
         .renewables-icon {
-            width: 24px;
-            margin-left: 5px;  /* Equal margins for both sides */
-            margin-right: 5px;
+            width: 20px;
+            margin-left: 2px;
+            margin-right: 2px;
         }
 
         #live-percentage {
-            font-weight: bold;
-            font-size: 18px;
+            font-weight: normal;
+            font-size: 16px;
+            margin-left: 2px;
+            margin-right: 2px;
         }
 
-        /* Mobile-specific styles */
+        #region-select-wrapper {
+            display: inline-flex;
+            align-items: center;
+            position: relative;
+            margin-right: 8px;
+        }
+
+        #region-select-wrapper i {
+            font-size: 16px;
+            color: grey;
+            margin-right: 8px;
+        }
+
+        #region-select {
+            background: none;
+            border: none;
+            font-size: 18px;
+            font-weight: bold;
+            font-family: inherit;
+            cursor: pointer;
+            appearance: none;
+            position: absolute;
+            left: 0;
+            width: 100%;
+            opacity: 0;
+        }
+
+        #region-select option {
+            font-size: 15px;
+            font-weight: normal; /* Apply normal weight */
+            font-family: Arial, sans-serif; /* Explicitly set a font-family */
+            color: black;
+        }
+
         @media (max-width: 600px) {
             #live-data-footer {
                 flex-direction: column;
             }
 
             .renewables-icon {
-                width: 20px; /* Smaller icons on mobile */
-                margin: 0 10px; /* Space for two characters on either side */
+                width: 18px;
+                margin: 0 4px;
             }
 
             #percentage-wrapper {
@@ -47,38 +81,90 @@
                 justify-content: center;
                 margin-top: 5px;
             }
+
+            #region-select {
+                font-size: 16px;
+                margin-top: 5px;
+            }
         }
     </style>
 </head>
 <body>
     <div id="live-data-footer">
-        <span id="energy-text">Renewables Currently on North West Grid:</span>
+        <div id="region-select-wrapper">
+            <i class="fas fa-chevron-down"></i>
+            <select id="region-select" onchange="fetchRegionData()">
+                <option value="North West England">North West England</option>
+                <option value="South East England">South East England</option>
+                <option value="East Midlands">East Midlands</option>
+                <option value="East England">East England</option>
+                <option value="London">London</option>
+                <option value="Merseyside">Merseyside</option>
+                <option value="North Wales">North Wales</option>
+                <option value="Cheshire">Cheshire</option>
+                <option value="Midlands">West Midlands</option>
+                <option value="North East England">North East England</option>
+                <option value="North Scotland">North Scotland</option>
+                <option value="South Scotland">South Scotland</option>
+                <option value="South Wales">South Wales</option>
+                <option value="South West England">South West England</option>
+                <option value="Yorkshire">Yorkshire</option>
+            </select>
+            <span id="region-display"></span> <!-- Region and time will be displayed here -->
+        </div>
+
         <div id="percentage-wrapper">
             <img src="https://raw.githubusercontent.com/nlpfd/live-data-energy-widget/main/WIND-ICON.png" alt="Renewables Icon" class="renewables-icon">
-            <span id="live-percentage">Loading...</span>
+            <span id="live-percentage"></span> <!-- Renewable percentage will be displayed here -->
             <img src="https://raw.githubusercontent.com/nlpfd/live-data-energy-widget/main/WIND-ICON.png" alt="Renewables Icon" class="renewables-icon">
         </div>
     </div>
 
     <script>
-        function fetchLiveData() {
+        const regionMapping = {
+            "North West England": "North West England",
+            "South East England": "South East England",
+            "East Midlands": "East Midlands",
+            "East England": "East England",
+            "London": "London",
+            "Merseyside": "North Wales & Merseyside",
+            "North Wales": "North Wales & Merseyside",
+            "Cheshire": "North Wales & Merseyside",
+            "Midlands": "West Midlands",
+            "North East England": "North East England",
+            "North Scotland": "North Scotland",
+            "South Scotland": "South Scotland",
+            "South Wales": "South Wales",
+            "South West England": "South West England",
+            "Yorkshire": "Yorkshire"
+        };
+
+        // Function to fetch data for a specific region selected by the user
+        function fetchRegionData() {
+            const selectedRegion = document.getElementById('region-select').value;
+            const apiRegionName = regionMapping[selectedRegion]; 
+
             fetch('https://api.carbonintensity.org.uk/regional')
             .then(response => response.json())
             .then(data => {
-                console.log('Full API Response:', data);
-
-                const region = data.data[0].regions.find(r => r.shortname === "North West England");
+                const region = data.data[0].regions.find(r => r.shortname === apiRegionName);
                 if (!region || !region.generationmix) {
-                    console.error('Generation mix data not available for North West England');
                     document.getElementById('live-percentage').textContent = ' Data unavailable';
                     return;
                 }
 
                 const wind = region.generationmix.find(item => item.fuel === 'wind')?.perc || 0;
                 const solar = region.generationmix.find(item => item.fuel === 'solar')?.perc || 0;
-                const combinedRenewables = Math.round(wind + solar);
+                const hydro = region.generationmix.find(item => item.fuel === 'hydro')?.perc || 0;
+                const combinedRenewables = Math.round(wind + solar + hydro);
 
+                const startTime = formatHalfHourPeriod(new Date());
+
+                document.getElementById('region-display').textContent = selectedRegion + ": " + startTime;
                 document.getElementById('live-percentage').textContent = ' ' + combinedRenewables + "%";
+
+                // Once data is ready, show the widget
+                document.getElementById('live-data-footer').style.visibility = "visible";
             })
             .catch(error => {
                 console.error('Error fetching data:', error);
@@ -86,6 +172,62 @@
             });
         }
 
+        // Function to fetch the region with the highest renewable percentage on page load
+        function fetchLiveData() {
+            fetch('https://api.carbonintensity.org.uk/regional')
+            .then(response => response.json())
+            .then(data => {
+                let highestRegion = null;
+                let highestRenewables = 0;
+
+                // Loop through all regions to find the one with the highest renewable percentage
+                data.data[0].regions.forEach(region => {
+                    const wind = region.generationmix.find(item => item.fuel === 'wind')?.perc || 0;
+                    const solar = region.generationmix.find(item => item.fuel === 'solar')?.perc || 0;
+                    const hydro = region.generationmix.find(item => item.fuel === 'hydro')?.perc || 0;
+                    const combinedRenewables = wind + solar + hydro;
+
+                    if (combinedRenewables > highestRenewables) {
+                        highestRenewables = combinedRenewables;
+                        highestRegion = region;
+                    }
+                });
+
+                if (highestRegion) {
+                    const selectedRegion = Object.keys(regionMapping).find(key => regionMapping[key] === highestRegion.shortname);
+                    document.getElementById('region-select').value = selectedRegion;
+                    document.getElementById('region-display').textContent = selectedRegion + ": " + formatHalfHourPeriod(new Date());
+                    document.getElementById('live-percentage').textContent = ' ' + Math.round(highestRenewables) + "%";
+                    
+                    // Once data is ready, show the widget
+                    document.getElementById('live-data-footer').style.visibility = "visible";
+                } else {
+                    document.getElementById('live-percentage').textContent = ' Data unavailable';
+                }
+            })
+            .catch(error => {
+                console.error('Error fetching data:', error);
+                document.getElementById('live-percentage').textContent = ' Error fetching data';
+            });
+        }
+
+        // Function to format the current half-hour period in 12-hour format with am/pm
+        function formatHalfHourPeriod(date) {
+            let hours = date.getHours();
+            const startMinutes = date.getMinutes() < 30 ? "00" : "30";
+            const endMinutes = startMinutes === "00" ? "30" : "00";
+            const ampm = hours >= 12 ? "pm" : "am";
+            hours = hours % 12 || 12; // Convert to 12-hour format
+
+            let endHours = date.getMinutes() < 30 ? hours : hours + 1;
+            const nextAmpm = endHours >= 12 ? "pm" : ampm;
+
+            endHours = endHours % 12 || 12;
+
+            return `${hours}:${startMinutes}${ampm} - ${endHours}:${endMinutes}${nextAmpm}`;
+        }
+
+        // Fetch data on page load for the highest renewables region
         window.onload = fetchLiveData;
     </script>
 </body>
